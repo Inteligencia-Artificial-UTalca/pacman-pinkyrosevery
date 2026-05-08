@@ -11,6 +11,7 @@
 #include "Controller.h"
 #include <random>
 #include "FSM.h"
+#include <chrono>
 
 class BlinkyStateMachine;
 
@@ -33,6 +34,30 @@ public:
 	std::shared_ptr<FSMState> getNextState()override;
 };
 
+class TimeTransition : public FSMTransition {
+
+private:
+    std::shared_ptr<FSMState> nextState;
+
+    std::chrono::steady_clock::time_point startTime;
+
+    int duration;
+
+public:
+
+    TimeTransition(
+        std::shared_ptr<FSMState> target,
+        int seconds
+    );
+
+    bool isValid(const GameState& gs) override;
+
+    std::shared_ptr<FSMState> getNextState() override;
+
+    ~TimeTransition();
+
+};
+
 class ChaseState:public FSMState{
 
 public:
@@ -40,6 +65,30 @@ public:
 	Move onUpdate(const GameState& gs) override;
 	void onEnter(const GameState& gs) override;
 	~ChaseState();
+
+};
+
+class ScatterState : public FSMState {
+
+public:
+    ScatterState(std::shared_ptr<Character> _character);
+    Move onUpdate(const GameState& gs) override;
+    void onEnter(const GameState& gs) override;
+    ~ScatterState();
+
+};
+
+class FrightenedState : public FSMState {
+
+public:
+
+    FrightenedState(std::shared_ptr<Character> _character);
+
+    Move onUpdate(const GameState& gs) override;
+
+    void onEnter(const GameState& gs) override;
+
+    ~FrightenedState();
 
 };
 

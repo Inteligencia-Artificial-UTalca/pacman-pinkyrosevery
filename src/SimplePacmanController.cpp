@@ -51,9 +51,34 @@ float SimplePacmanController::getDistanceToGhost(const GameState& game, int g)co
 		game.getMaze().getNodePos(character->getPos()),
 		game.getMaze().getNodePos(game.getGhostsPos(g))));
 }
+std::pair<int,int>
+getClosestPellet(
+	const GameState& game,
+	int pacmanNode)
+{
+	auto pacmanPos =
+		game.getMaze().getNodePos(pacmanNode);
 
-Move
-SimplePacmanController::getMove(const GameState& game){
+	auto pills =
+		game.getMaze().getPillPositions();
+
+	float minDist = 999999;
+
+	std::pair<int,int> best = pacmanPos;
+
+	for(auto p : pills){
+
+		float d = euclid2(pacmanPos, p);
+
+		if(d < minDist){
+			minDist = d;
+			best = p;
+		}
+	}
+
+	return best;
+}
+Move SimplePacmanController::getMove(const GameState& game){
 
 	//para cerrar la ventana
 	SDL_Event e;
@@ -90,9 +115,6 @@ SimplePacmanController::getMove(const GameState& game){
 	float hunger=0.0f;
 	Move eatGhostMove=PASS;
 
-
-
-	//arrancar de fantasmas cercanos que me pueden comer 
 	for(int i=0;i<4;i++){
 		if((!ghostsEdible[i])){
 			float tempFear=1.0f-1.0f/(1.0f+pow(2.718f * 0.45f,-getDistanceToGhost(game,i)+32.0f));//logistica
@@ -116,7 +138,32 @@ SimplePacmanController::getMove(const GameState& game){
 	}
 	//std::cout<<"fear="<<fear<<std::endl;
 	//std::cout<<"hunger="<<hunger<<std::endl;
-	if(fear>hunger)return escapeMove;
-	else return eatGhostMove;
+
+	// PRIORIDAD 1: escapar
+	if(fear > 0.6f){
+		return escapeMove;
+	}
+
+	// PRIORIDAD 2: comer fantasmas azules
+	if(hunger > 0.3f){
+		return eatGhostMove;
+	}
+
+	// PRIORIDAD 3: moverse normalmente
+	std::vector<Move> moves =
+		game.getMaze().getPossibleMoves(character->getPos());
+
+	if(!moves.empty()){
+
+		for(auto m : moves){
+			if(m == character->getDirection()){
+				return m;
+			}
+		}
+
+		return moves[rand() % moves.size()];
+	}
+
+	return PASS;
 	
 }
